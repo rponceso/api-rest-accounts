@@ -26,6 +26,8 @@ public interface AccountService {
 
     Flux<Account> getByCustomer_Id(String customerId);
 
+    Flux<Account> findByCustomer_IdAndAccountType_Code(String customerId, String codeAccountType);
+
     Flux<Account> findByCreationDateBetween(FilterDto filtroDto);
 
 }

@@ -21,7 +21,7 @@ public interface AccountRepository extends ReactiveMongoRepository<Account, Stri
 
     Flux<Account> findByCustomer_Id(String customerId);
 
-    Mono<Account> findByCustomer_IdAndAccountType_Code(String customerId, String codeAccountType);
+    Flux<Account> findByCustomer_IdAndAccountType_Code(String customerId, String codeAccountType);
 
     Flux<Account> findByCreationDateBetween(LocalDate startDate, LocalDate endDate);
 

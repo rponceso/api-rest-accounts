@@ -19,10 +19,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -74,13 +78,34 @@ public class AccountController {
 
 
     @PostMapping
-    public Mono<ResponseEntity<Account>> register(@RequestBody Account account, final ServerHttpRequest req) {
+    public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody Account account, final ServerHttpRequest req) {
 
-        return service.create(account)
-                .map(ac -> ResponseEntity.created(URI.create(req.getURI().toString().concat("/").concat(ac.getId())))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(ac)
-                );
+        Mono<Account> monoAccount = Mono.just(account);
+        Map<String, Object> respuesta = new HashMap<String, Object>();
+
+        return monoAccount.flatMap(acc -> {
+            return service.create(account)
+                    .map(ac -> {
+                        log.info("Account created successfully");
+                        respuesta.put("account", ac);
+                        respuesta.put("message", "Account created successfully");
+                        respuesta.put("timestamp", new Date());
+                        return ResponseEntity.created(URI.create(req.getURI().toString().concat("/").concat(ac.getId())))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(respuesta);
+                    });
+        }).onErrorResume(t -> {
+            log.info("entro aqui");
+            return Mono.just(t).cast(Exception.class)
+                    .flatMap(list -> {
+                        respuesta.put("error", list.getMessage());
+                        respuesta.put("timestamp", new Date());
+                        respuesta.put("status", HttpStatus.BAD_REQUEST.value());
+                        return Mono.just(ResponseEntity.badRequest().body(respuesta));
+                    });
+
+        });
+
     }
 
     @PutMapping("/{id}")
